@@ -1,0 +1,179 @@
+version: '3.1'
+
+services:
+  zoo1:
+    image: zookeeper
+    container_name: zoo1
+    restart: always
+    hostname: zoo1
+    ports:
+      - 2181:2181
+    volumes:
+      - ${DATA_DISK}/zookeeper/zoo1_data:/data
+      - ${DATA_DISK}/zookeeper/zoo1_datalog:/datalog
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+
+  zoo2:
+    image: zookeeper
+    container_name: zoo2
+    restart: always
+    hostname: zoo2
+    ports:
+      - 2182:2181
+    volumes:
+      - ${DATA_DISK}/zookeeper/zoo2_data:/data
+      - ${DATA_DISK}/zookeeper/zoo2_datalog:/datalog
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zoo3:2888:3888
+
+  zoo3:
+    image: zookeeper
+    container_name: zoo3
+    restart: always
+    hostname: zoo3
+    ports:
+      - 2183:2181
+    volumes:
+      - ${DATA_DISK}/zookeeper/zoo3_data:/data
+      - ${DATA_DISK}/zookeeper/zoo3_datalog:/datalog
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=0.0.0.0:2888:3888
+
+  nimbus1:
+    image: storm
+    container_name: numbus1
+    command: storm nimbus
+    hostname: nimbus1
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    links:
+      - zoo1
+      - zoo2
+      - zoo3
+    restart: always
+    ports:
+      - 6627:6627
+    volumes:
+      - ${DATA_DISK}/storm/nimbus1:/storm
+      - ${PWD}/storm.yaml:/conf/storm.yaml
+
+  nimbus2:
+    image: storm
+    container_name: numbus2
+    command: storm nimbus
+    hostname: nimbus2
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    links:
+      - zoo1
+      - zoo2
+      - zoo3
+    restart: always
+    ports:
+      - 6628:6627
+    volumes:
+      - ${DATA_DISK}/storm/nimbus2:/storm
+      - ${PWD}/storm.yaml:/conf/storm.yaml
+
+  supervisor1:
+    image: storm
+    container_name: supervisor1
+    command: storm supervisor
+    restart: always
+    hostname: supervisor1
+    depends_on:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+    links:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+    volumes:
+      - ${DATA_DISK}/storm/supervisor1:/storm
+      - ${PWD}/storm.yaml:/conf/storm.yaml
+
+  supervisor2:
+    image: storm
+    container_name: supervisor2
+    command: storm supervisor
+    restart: always
+    hostname: supervisor2
+    depends_on:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+    links:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+    volumes:
+      - ${DATA_DISK}/storm/supervisor2:/storm
+      - ${PWD}/storm.yaml:/conf/storm.yaml
+
+  supervisor3:
+    image: storm
+    container_name: supervisor3
+    command: storm supervisor
+    restart: always
+    hostname: supervisor3
+    depends_on:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+    links:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+    volumes:
+      - ${DATA_DISK}/storm/supervisor3:/storm
+      - ${PWD}/storm.yaml:/conf/storm.yaml
+
+  stormui:
+    image: storm
+    container_name: stormui
+    command: storm ui
+    restart: always
+    hostname: stormui
+    depends_on:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+      - supervisor1
+      - supervisor2
+      - supervisor3
+    links:
+      - nimbus1
+      - nimbus2
+      - zoo1
+      - zoo2
+      - zoo3
+      - supervisor1
+      - supervisor2
+      - supervisor3
+    ports:
+      - 8080:8080
+    volumes:
+      - ${PWD}/storm.yaml:/conf/storm.yaml

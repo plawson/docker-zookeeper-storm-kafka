@@ -1,0 +1,11 @@
+ storm.zookeeper.servers:
+     - "zoo1"
+     - "zoo2"
+     - "zoo3"
+ storm.zookeeper.port: 2181
+ storm.zookeeper.root: "/storm"
+#
+ storm.local.dir: "/storm"
+# nimbus.seeds: ["host1", "host2", "host3"]
+ nimbus.seeds: ["nimbus1","nimbus2"]
+ supervisor.slots.ports: [6700, 6701, 6702, 6703]
