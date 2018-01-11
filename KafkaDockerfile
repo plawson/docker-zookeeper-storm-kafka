@@ -1,0 +1,35 @@
+FROM openjdk:8-jre-alpine
+
+# Install required packages
+RUN apk add --no-cache \
+    bash \
+    su-exec
+
+    ENV KAFKA_USER=kafka \
+        KAFKA_CONF_DIR=/conf \
+	KAFKA_LOG_DIR=/logs
+
+    RUN set -ex; \
+        adduser -D "$KAFKA_USER"; \
+	mkdir -p "$KAFKA_CONF_DIR" "$KAFKA_LOG_DIR"; \
+	chown "$KAFKA_USER:$KAFKA_USER" "$KAFKA_CONF_DIR" "$KAFKA_LOG_DIR"
+
+    ARG DISTRO_NAME=kafka_2.12-1.0.0
+
+    # Download Apache Kafka
+    RUN set -ex; \
+        wget -q "http://mirrors.ircam.fr/pub/apache/kafka/1.0.0/$DISTRO_NAME.tgz"; \
+	tar xzf "$DISTRO_NAME.tgz"; \
+	cp "$DISTRO_NAME/config/server.properties" "$KAFKA_CONF_DIR"; \
+	rm -f "$DISTRO_NAME.tgz"
+
+    WORKDIR $DISTRO_NAME
+    VOLUME ["$KAFKA_CONF_DIR", "$KAFKA_LOG_DIR"]
+
+    EXPOSE 9092
+
+    ENV PATH=$PATH:/$DISTRO_NAME/bin
+
+    COPY docker-entrypoint.sh /
+    ENTRYPOINT ["/docker-entrypoint.sh"]
+    CMD ["kafka-server-start.sh", "/conf/server.properties"]
